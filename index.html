@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITAM — Asset management prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sidebar-bg: #111;
+  --bg: #f7f7f7;
+  --surface: #fff;
+  --border: #ebebeb;
+  --border-mid: #e0e0e0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-muted: #aaa;
+  --accent: #e87c3a;
+  --accent-light: #fef4ed;
+  --accent-border: #f5c9a8;
+  --accent-hover: #d96e2d;
+  --red: #d63e3e;
+  --red-light: #fff0f0;
+  --red-border: #f5c0c0;
+  --blue: #3a6ee8;
+  --blue-light: #eef2fd;
+  --green: #2e9e6b;
+  --green-light: #edf7f3;
+  --yellow: #d4920a;
+  --yellow-light: #fefaed;
+  --purple: #7c3ae8;
+  --purple-light: #f4eeff;
+  --dark-btn: #2c3444;
+}
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  display: flex; min-height: 100vh;
+  font-size: 13px; color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 210px; background: var(--sidebar-bg);
+  display: flex; flex-direction: column;
+  flex-shrink: 0; height: 100vh; overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 16px 14px 14px; display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid #1e1e1e; flex-shrink: 0;
+}
+.logo-box {
+  width: 26px; height: 26px; background: var(--accent);
+  border-radius: 7px; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; color: white;
+}
+.logo-name { font-size: 13px; font-weight: 600; color: white; }
+.sb-section { padding: 14px 0 2px; }
+.sb-label { padding: 0 14px 5px; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #3a3a3a; }
+.sb-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+  cursor: pointer; color: #888; font-size: 12.5px; transition: color 0.12s; position: relative;
+}
+.sb-item:hover { color: #ccc; }
+.sb-item.active { color: white; font-weight: 500; }
+.sb-item.active::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 16px; background: var(--accent); border-radius: 0 2px 2px 0;
+}
+.sb-sub { padding-left: 28px; }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topnav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 22px; display: flex; align-items: center;
+  justify-content: space-between; height: 50px; flex-shrink: 0;
+}
+.breadcrumb { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); }
+.breadcrumb .cur { color: var(--text-primary); font-weight: 500; }
+.nav-actions { display: flex; gap: 8px; }
+.btn {
+  display: flex; align-items: center; gap: 5px; padding: 6px 13px; border-radius: 6px;
+  border: 1px solid var(--border-mid); background: var(--surface);
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; color: var(--text-primary); transition: all 0.12s;
+}
+.btn:hover { background: var(--bg); }
+.btn-notes { background: var(--accent-light); border-color: var(--accent-border); color: var(--accent); }
+.btn-notes:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+.content-wrap { flex: 1; display: flex; overflow: hidden; }
+.page { flex: 1; overflow-y: auto; padding: 20px 22px; transition: opacity 0.2s; }
+.page.dimmed { opacity: 0.28; pointer-events: none; }
+
+/* asset header */
+.asset-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.asset-avatar { width: 46px; height: 46px; background: #f0f0f0; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 19px; }
+.asset-info h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.asset-info p { color: var(--text-secondary); font-size: 11.5px; margin-top: 2px; }
+.status-chip { margin-left: auto; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--green-light); color: var(--green); }
+
+/* tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab { padding: 9px 14px; font-size: 12.5px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.12s; }
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-badge { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: white; font-size: 9px; font-weight: 700; margin-left: 5px; }
+
+/* info cards */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.info-card-title { font-size: 11.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+.info-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f5f5f5; font-size: 12.5px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--text-secondary); }
+.info-val { font-weight: 500; }
+
+/* ── DOCS EMPTY ── */
+.docs-empty-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.dropzone { border: 2px dashed var(--border-mid); border-radius: 8px; background: var(--bg); margin: 16px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: all 0.18s; text-align: center; }
+.dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--accent-light); }
+.dropzone:hover .dz-up-icon { transform: translateY(-3px); }
+.dz-up-icon { width: 44px; height: 44px; background: var(--accent-light); border: 1.5px solid var(--accent-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; transition: transform 0.18s; }
+.dz-title { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+.dz-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.55; max-width: 320px; }
+.dz-link { color: var(--accent); font-weight: 500; cursor: pointer; }
+.dz-cta { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; }
+.hint-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 13px; }
+.hint-tag { padding: 3px 10px; background: #f2f2f2; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.dz-formats { font-size: 11px; color: var(--text-muted); }
+.ghost-thead { display: grid; grid-template-columns: 2.6fr 1fr 1.2fr 100px; padding: 9px 16px; background: var(--bg); border-top: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); opacity: 0.55; }
+
+/* ── DOCS STAGING ── */
+.docs-staging-wrap { display: flex; flex-direction: column; gap: 14px; }
+.dropzone-compact { border: 1.5px dashed var(--border-mid); border-radius: 8px; background: var(--surface); padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s; }
+.dropzone-compact:hover, .dropzone-compact.over { border-color: var(--accent); background: var(--accent-light); }
+.dz-compact-icon { width: 30px; height: 30px; background: var(--accent-light); border: 1px solid var(--accent-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.staged-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.staged-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.staged-head-left { display: flex; align-items: center; gap: 8px; }
+.staged-head-title { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+.staged-count { font-size: 10.5px; font-weight: 600; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); border-radius: 20px; padding: 1px 8px; }
+.staged-upload-btn { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 6px; border: none; background: var(--dark-btn); color: white; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: background 0.12s; }
+.staged-upload-btn:hover { background: #232a38; }
+.staged-list { display: flex; flex-direction: column; }
+.staged-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #f5f5f5; transition: background 0.1s; }
+.staged-row:last-child { border-bottom: none; }
+.staged-row:hover { background: var(--bg); }
+.s-badge { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.badge-pdf { background: var(--red-light); color: var(--red); }
+.badge-doc { background: var(--blue-light); color: var(--blue); }
+.badge-xls { background: var(--green-light); color: var(--green); }
+.badge-img { background: var(--yellow-light); color: var(--yellow); }
+.badge-txt { background: #f2f2f2; color: #666; }
+.s-info { flex: 1; min-width: 0; }
+.s-name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-size { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.s-rm { width: 24px; height: 24px; border-radius: 5px; border: 1px solid var(--border); background: none; cursor: pointer; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: all 0.1s; flex-shrink: 0; }
+.s-rm:hover { background: var(--red-light); border-color: var(--red-border); color: var(--red); }
+.staged-footer { padding: 9px 16px; border-top: 1px solid var(--border); background: var(--bg); font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+
+/* ── DOCS FILLED ── */
+.docs-filled-wrap { display: flex; flex-direction: column; gap: 14px; }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.table-head { display: grid; grid-template-columns: 2.6fr 1fr 1.2fr 100px; padding: 9px 16px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.table-row { display: grid; grid-template-columns: 2.6fr 1fr 1.2fr 100px; padding: 11px 16px; border-bottom: 1px solid #f5f5f5; align-items: center; cursor: pointer; transition: background 0.1s; }
+.table-row:last-child { border-bottom: none; }
+.table-row:hover { background: var(--bg); }
+.doc-cell { display: flex; align-items: center; gap: 10px; }
+.type-badge { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.doc-title { font-size: 12.5px; font-weight: 500; }
+.doc-size { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.doc-date { font-size: 12px; color: var(--text-secondary); }
+.doc-user { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.u-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: white; flex-shrink: 0; }
+.row-acts { display: flex; gap: 4px; opacity: 0; transition: opacity 0.1s; }
+.table-row:hover .row-acts { opacity: 1; }
+.act-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.1s; color: var(--text-secondary); }
+.act-btn:hover { background: var(--bg); }
+.act-btn.del:hover { background: var(--red-light); border-color: var(--red-border); color: var(--red); }
+.table-foot { padding: 8px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); background: var(--bg); }
+
+/* ════════════════════════════════
+   NOTES PANEL — redesigned
+════════════════════════════════ */
+.notes-panel {
+  width: 0; overflow: hidden; background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
+  transition: width 0.25s ease;
+}
+.notes-panel.open { width: 320px; }
+
+/* panel header */
+.panel-head {
+  padding: 13px 15px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+}
+.panel-head-left { display: flex; flex-direction: column; gap: 2px; }
+.panel-title { font-size: 13.5px; font-weight: 600; }
+.panel-subtext { font-size: 11.5px; color: var(--text-muted); }
+.panel-x { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border); background: none; cursor: pointer; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: all 0.12s; flex-shrink: 0; margin-top: 1px; }
+.panel-x:hover { background: var(--bg); color: var(--text-primary); }
+
+/* ── EMPTY STATE — minimal, no suggestion cards ── */
+.notes-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 24px; gap: 10px; text-align: center;
+}
+.ne-icon {
+  width: 52px; height: 52px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 14px; display: flex; align-items: center;
+  justify-content: center; font-size: 22px; margin-bottom: 4px;
+}
+.ne-title { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.ne-sub { font-size: 12px; color: var(--text-muted); line-height: 1.6; max-width: 210px; }
+
+/* ── NOTES SCROLL AREA ── */
+.notes-scroll {
+  flex: 1; overflow-y: auto; padding: 14px 15px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* individual note card */
+.note-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.note-card:hover { border-color: var(--border-mid); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+.note-card:hover .note-actions { opacity: 1; }
+.note-card.editing { border-color: var(--accent); }
+.note-card-bar { height: 3px; }
+.note-card-body { padding: 11px 12px 10px; }
+
+/* header */
+.note-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.note-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; color: white; flex-shrink: 0; }
+.note-author { font-size: 12px; font-weight: 600; color: var(--text-primary); flex: 1; }
+.note-edited-badge {
+  font-size: 10px; font-weight: 500; color: var(--text-muted);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 6px; cursor: pointer;
+  transition: all 0.12s;
+}
+.note-edited-badge:hover { background: var(--accent-light); border-color: var(--accent-border); color: var(--accent); }
+
+/* current text */
+.note-text { font-size: 12.5px; line-height: 1.65; color: var(--text-primary); }
+
+/* original version (hidden by default, toggle) */
+.note-original-wrap {
+  display: none; margin-top: 10px; padding: 9px 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.note-original-wrap.show { display: block; }
+.note-original-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px; }
+.note-original-text { font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
+
+/* edit area — appears BELOW the text, doesn't hide it */
+.note-edit-area { display: none; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.note-card.editing .note-edit-area { display: block; }
+.note-card.editing .note-footer { display: none; }
+.edit-ta {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+  line-height: 1.55; resize: none; outline: none;
+  color: var(--text-primary); background: var(--bg); transition: border-color 0.14s;
+  min-height: 64px; display: block;
+}
+.edit-ta:focus { border-color: var(--accent); background: white; }
+.edit-hint { font-size: 10.5px; color: var(--text-muted); margin-bottom: 7px; }
+.edit-footer-row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.edit-cancel { padding: 5px 11px; border-radius: 5px; border: 1px solid var(--border); background: none; font-family: 'DM Sans', sans-serif; font-size: 11.5px; cursor: pointer; color: var(--text-secondary); }
+.edit-save { padding: 5px 12px; border-radius: 5px; border: none; background: var(--accent); color: white; font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 500; cursor: pointer; }
+.edit-save:hover { background: var(--accent-hover); }
+
+/* footer */
+.note-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 9px; margin-top: 9px; border-top: 1px solid #f2f2f2;
+}
+.note-timestamps { display: flex; flex-direction: column; gap: 1px; }
+.note-time-added { font-size: 10.5px; color: var(--text-muted); }
+.note-time-edited { font-size: 10px; color: var(--text-muted); font-style: italic; }
+.note-actions { display: flex; gap: 6px; align-items: center; opacity: 0; transition: opacity 0.12s; }
+.na-btn { font-size: 11.5px; color: var(--text-muted); background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; transition: color 0.1s; }
+.na-btn:hover { color: var(--text-primary); }
+.na-btn.del:hover { color: var(--red); }
+.na-sep { width: 1px; height: 11px; background: var(--border-mid); }
+
+/* delete confirm — minimal inline row, no card-level state change */
+.delete-inline {
+  display: none; align-items: center; justify-content: space-between;
+  margin-top: 9px; padding: 8px 10px;
+  background: var(--red-light); border: 1px solid var(--red-border);
+  border-radius: 6px;
+}
+.delete-inline.show { display: flex; }
+.del-inline-text { font-size: 12px; color: var(--red); font-weight: 500; }
+.del-inline-btns { display: flex; gap: 5px; }
+.del-yes { padding: 4px 10px; border-radius: 5px; border: none; background: var(--red); color: white; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; }
+.del-yes:hover { background: #c03535; }
+.del-no { padding: 4px 9px; border-radius: 5px; border: 1px solid var(--red-border); background: white; font-family: 'DM Sans', sans-serif; font-size: 11px; cursor: pointer; color: var(--red); }
+.del-no:hover { background: var(--red-light); }
+
+/* ── COMPOSE BAR at bottom — chat-style ── */
+.notes-compose-bar {
+  padding: 12px 15px; border-top: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.compose-wrap {
+  display: flex; align-items: flex-end; gap: 8px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 8px 10px;
+  transition: border-color 0.15s;
+}
+.compose-wrap:focus-within { border-color: var(--accent); background: var(--surface); }
+.compose-ta {
+  flex: 1; border: none; outline: none; resize: none;
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+  line-height: 1.55; background: transparent; color: var(--text-primary);
+  min-height: 20px; max-height: 120px; overflow-y: auto;
+}
+.compose-ta::placeholder { color: var(--text-muted); }
+.compose-send {
+  width: 30px; height: 30px; border-radius: 7px;
+  border: none; background: var(--accent); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; font-size: 13px;
+  transition: background 0.12s; align-self: flex-end;
+}
+.compose-send:hover { background: var(--accent-hover); }
+.compose-send:disabled { background: var(--border-mid); cursor: not-allowed; }
+
+/* animations */
+@keyframes noteIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.note-new { animation: noteIn 0.2s ease; }
+@keyframes shimmer { 0% { background-position: -300px 0; } 100% { background-position: 300px 0; } }
+.uploading .s-name { background: linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%); background-size:300px 100%; animation: shimmer 1.2s infinite; border-radius:4px; color:transparent; height:14px; width:80%; }
+.uploading .s-size { background:#eee; border-radius:4px; color:transparent; height:10px; width:40%; animation:shimmer 1.2s infinite; }
+
+/* ── PROTO NAV ── */
+.proto-nav {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 5px; z-index: 200;
+  background: rgba(15,15,15,0.92); padding: 7px 10px; border-radius: 30px;
+  backdrop-filter: blur(8px); white-space: nowrap;
+}
+.pnav-btn { padding: 5px 12px; border-radius: 20px; border: none; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; color: #777; background: transparent; transition: all 0.15s; }
+.pnav-btn:hover { color: white; }
+.pnav-btn.on { background: var(--accent); color: white; }
+.pnav-sep { width: 1px; background: #333; margin: 4px 2px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-box">IT</div>
+    <span class="logo-name">AssetTrack</span>
+  </div>
+  <div class="sb-section">
+    <div class="sb-item">⊞ Dashboard</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Assets</div>
+    <div class="sb-item">◫ All assets</div>
+    <div class="sb-item sb-sub">· Laptop</div>
+    <div class="sb-item sb-sub active">· Desktop</div>
+    <div class="sb-item sb-sub">· Smartphone</div>
+    <div class="sb-item sb-sub">· Tablet</div>
+    <div class="sb-item sb-sub">· Monitor</div>
+    <div class="sb-item sb-sub">· Printer</div>
+    <div class="sb-item sb-sub">· Network gear</div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Manage</div>
+    <div class="sb-item">⬡ Softwares</div>
+    <div class="sb-item">⬡ Users</div>
+    <div class="sb-item">⬡ Accessories</div>
+    <div class="sb-item">⬡ Archived</div>
+    <div class="sb-item">⬡ Exceptions</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <nav class="topnav">
+    <div class="breadcrumb">
+      <span style="cursor:pointer;color:var(--text-secondary)" onclick="goState('general')">Assets</span>
+      <span style="color:var(--text-muted);font-size:11px">›</span>
+      <span class="cur">Desktop — Dell OptiPlex 7090</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-notes" onclick="toggleNotes()">📝 Add notes</button>
+      <button class="btn">✏️ Update</button>
+    </div>
+  </nav>
+
+  <div class="content-wrap">
+    <div class="page" id="mainPage">
+
+      <div class="asset-header">
+        <div class="asset-avatar">🖥️</div>
+        <div class="asset-info">
+          <h1>Desktop — Dell OptiPlex 7090</h1>
+          <p>Asset tag: DT-00421 · Assigned to Mark S. · IT department</p>
+        </div>
+        <div class="status-chip">● Active</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" id="tab-general" onclick="switchTab('general')">General info</div>
+        <div class="tab" id="tab-hardware" onclick="switchTab('hardware')">Hardware</div>
+        <div class="tab" id="tab-software" onclick="switchTab('software')">Software</div>
+        <div class="tab" id="tab-licences" onclick="switchTab('licences')">Licences</div>
+        <div class="tab" id="tab-financials" onclick="switchTab('financials')">Financials</div>
+        <div class="tab" id="tab-docs" onclick="switchTab('docs')">
+          Documents <span class="tab-badge" id="docs-badge" style="display:none">3</span>
+        </div>
+        <div class="tab" id="tab-history" onclick="switchTab('history')">History</div>
+      </div>
+
+      <!-- GENERAL INFO -->
+      <div id="view-general">
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-card-title">Device details</div>
+            <div class="info-row"><span class="info-label">Model</span><span class="info-val">OptiPlex 7090</span></div>
+            <div class="info-row"><span class="info-label">Manufacturer</span><span class="info-val">Dell</span></div>
+            <div class="info-row"><span class="info-label">Asset ID</span><span class="info-val">DT-00421</span></div>
+            <div class="info-row"><span class="info-label">Asset type</span><span class="info-val">Desktop</span></div>
+            <div class="info-row"><span class="info-label">Serial no.</span><span class="info-val">7XG2K-9PL4M</span></div>
+            <div class="info-row"><span class="info-label">Status</span><span class="info-val" style="color:var(--green)">● Active</span></div>
+            <div class="info-row"><span class="info-label">Condition</span><span class="info-val">Good</span></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Purchase & warranty</div>
+            <div class="info-row"><span class="info-label">Purchase date</span><span class="info-val">14 Mar 2022</span></div>
+            <div class="info-row"><span class="info-label">Purchase cost</span><span class="info-val">$1,249.00</span></div>
+            <div class="info-row"><span class="info-label">Purchase type</span><span class="info-val">Direct buy</span></div>
+            <div class="info-row"><span class="info-label">Vendor</span><span class="info-val">Dell Technologies</span></div>
+            <div class="info-row"><span class="info-label">Warranty start</span><span class="info-val">14 Mar 2022</span></div>
+            <div class="info-row"><span class="info-label">Warranty expiry</span><span class="info-val">14 Mar 2025</span></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Specifications</div>
+            <div class="info-row"><span class="info-label">Processor</span><span class="info-val">Intel Core i7-11700</span></div>
+            <div class="info-row"><span class="info-label">RAM</span><span class="info-val">16 GB</span></div>
+            <div class="info-row"><span class="info-label">Storage</span><span class="info-val">512 GB SSD</span></div>
+            <div class="info-row"><span class="info-label">OS</span><span class="info-val">Windows 11 Pro</span></div>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">Usage & location</div>
+            <div class="info-row"><span class="info-label">Assigned to</span><span class="info-val">Mark Sullivan</span></div>
+            <div class="info-row"><span class="info-label">Department</span><span class="info-val">IT Operations</span></div>
+            <div class="info-row"><span class="info-label">Location</span><span class="info-val">Floor 3 — Desk 14B</span></div>
+            <div class="info-row"><span class="info-label">Custom label</span><span class="info-val">IT-CORE-DESKTOP</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCS EMPTY -->
+      <div id="view-docs-empty" style="display:none">
+        <div class="docs-empty-wrap">
+          <div class="dropzone" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)" onclick="triggerInput()">
+            <div class="dz-up-icon">⬆️</div>
+            <div class="dz-title">No documents yet</div>
+            <div class="dz-sub">Keep all asset records in one place — invoices, warranties, manuals and more.</div>
+            <div class="dz-cta"><a class="dz-link">Choose file</a> or drag and drop to upload</div>
+            <div class="hint-tags">
+              <span class="hint-tag">Purchase order</span>
+              <span class="hint-tag">Sales invoice</span>
+              <span class="hint-tag">Warranty certificate</span>
+              <span class="hint-tag">Service report</span>
+              <span class="hint-tag">Insurance policy</span>
+              <span class="hint-tag">User manual</span>
+              <span class="hint-tag">Lease agreement</span>
+            </div>
+            <div class="dz-formats">PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG · No size limit</div>
+          </div>
+          <div class="ghost-thead"><div>Document</div><div>Date added</div><div>Added by</div><div>Actions</div></div>
+        </div>
+      </div>
+
+      <!-- DOCS STAGING -->
+      <div id="view-docs-staging" style="display:none">
+        <div class="docs-staging-wrap">
+          <div class="dropzone-compact" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)" onclick="triggerInput()">
+            <div class="dz-compact-icon">⬆️</div>
+            <div style="flex:1;font-size:12.5px;color:var(--text-secondary)"><a class="dz-link" style="font-size:12.5px">Choose file</a> or drag and drop to add more</div>
+            <div style="font-size:11px;color:var(--text-muted)">PDF, DOC, DOCX, XLS, XLSX, PNG, JPG</div>
+          </div>
+          <div class="staged-card">
+            <div class="staged-head">
+              <div class="staged-head-left">
+                <div class="staged-head-title">Ready to upload</div>
+                <div class="staged-count" id="staged-count">0 files</div>
+              </div>
+              <button class="staged-upload-btn" onclick="uploadFiles()">⬆ Upload all</button>
+            </div>
+            <div class="staged-list" id="staged-list"></div>
+            <div class="staged-footer">
+              <span id="staged-total"></span>
+              <span style="cursor:pointer;color:var(--red);font-size:11.5px" onclick="clearAll()">✕ Clear all</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCS FILLED -->
+      <div id="view-docs-filled" style="display:none">
+        <div class="docs-filled-wrap">
+          <div class="dropzone-compact" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDropFilled(event)" onclick="triggerInput()">
+            <div class="dz-compact-icon">⬆️</div>
+            <div style="flex:1;font-size:12.5px;color:var(--text-secondary)"><a class="dz-link" style="font-size:12.5px">Choose file</a> or drag and drop to upload more</div>
+            <div style="font-size:11px;color:var(--text-muted)">PDF, DOC, DOCX, XLS, XLSX, PNG, JPG</div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head"><div>Document</div><div>Date added</div><div>Added by</div><div>Actions</div></div>
+            <div class="table-row">
+              <div class="doc-cell"><div class="type-badge badge-pdf">PDF</div><div><div class="doc-title">Warranty certificate 2024</div><div class="doc-size">1.2 MB</div></div></div>
+              <div class="doc-date">12 Jan 2025</div>
+              <div class="doc-user"><div class="u-dot" style="background:#3a6ee8">JK</div>James K.</div>
+              <div class="row-acts"><button class="act-btn">👁</button><button class="act-btn">⬇</button><button class="act-btn del">🗑</button></div>
+            </div>
+            <div class="table-row">
+              <div class="doc-cell"><div class="type-badge badge-doc">DOC</div><div><div class="doc-title">Purchase order — Dell OptiPlex</div><div class="doc-size">340 KB</div></div></div>
+              <div class="doc-date">03 Nov 2024</div>
+              <div class="doc-user"><div class="u-dot" style="background:#2e9e6b">SR</div>Sarah R.</div>
+              <div class="row-acts"><button class="act-btn">👁</button><button class="act-btn">⬇</button><button class="act-btn del">🗑</button></div>
+            </div>
+            <div class="table-row">
+              <div class="doc-cell"><div class="type-badge badge-xls">XLS</div><div><div class="doc-title">Asset configuration sheet</div><div class="doc-size">2.8 MB</div></div></div>
+              <div class="doc-date">28 Oct 2024</div>
+              <div class="doc-user"><div class="u-dot" style="background:#e87c3a">MT</div>Mike T.</div>
+              <div class="row-acts"><button class="act-btn">👁</button><button class="act-btn">⬇</button><button class="act-btn del">🗑</button></div>
+            </div>
+            <div class="table-foot">3 documents · 4.3 MB total</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLACEHOLDER TABS -->
+      <div id="view-hardware" style="display:none"><div class="info-card"><div class="info-card-title">Hardware</div><div style="color:var(--text-muted);font-size:12.5px;padding:8px 0">Hardware details would appear here.</div></div></div>
+      <div id="view-software" style="display:none"><div class="info-card"><div class="info-card-title">Software</div><div style="color:var(--text-muted);font-size:12.5px;padding:8px 0">Installed software would appear here.</div></div></div>
+      <div id="view-licences" style="display:none"><div class="info-card"><div class="info-card-title">Licences</div><div style="color:var(--text-muted);font-size:12.5px;padding:8px 0">Software licences would appear here.</div></div></div>
+      <div id="view-financials" style="display:none"><div class="info-card"><div class="info-card-title">Financials</div><div style="color:var(--text-muted);font-size:12.5px;padding:8px 0">Financial records would appear here.</div></div></div>
+      <div id="view-history" style="display:none"><div class="info-card"><div class="info-card-title">History</div><div style="color:var(--text-muted);font-size:12.5px;padding:8px 0">Asset history log would appear here.</div></div></div>
+
+    </div><!-- /page -->
+
+    <!-- ════ NOTES PANEL ════ -->
+    <aside class="notes-panel" id="notesPanel">
+
+      <div class="panel-head">
+        <div class="panel-head-left">
+          <div class="panel-title">Add notes</div>
+          <div class="panel-subtext">Desktop — Dell OptiPlex 7090</div>
+        </div>
+        <button class="panel-x" onclick="toggleNotes()">✕</button>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="notes-empty" id="notesEmptyState">
+        <div class="ne-icon">📝</div>
+        <div class="ne-title">No notes yet</div>
+        <div class="ne-sub">Add a note below to track repairs, flag issues, or leave context for your team.</div>
+      </div>
+
+      <!-- NOTES LIST -->
+      <div class="notes-scroll" id="notesScroll" style="display:none"></div>
+
+      <!-- COMPOSE BAR — always visible at bottom -->
+      <div class="notes-compose-bar">
+        <div class="compose-wrap">
+          <textarea
+            class="compose-ta"
+            id="composeTa"
+            placeholder="Write a note…"
+            rows="1"
+            oninput="autoResize(this); toggleSendBtn()"
+            onkeydown="handleEnter(event)"
+          ></textarea>
+          <button class="compose-send" id="sendBtn" disabled onclick="saveNote()" title="Send">
+            ↑
+          </button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png" style="display:none" onchange="handleFileSelect(event)">
+
+<!-- PROTO NAV -->
+<div class="proto-nav">
+  <button class="pnav-btn on" id="pnav-general" onclick="goState('general')">General info</button>
+  <div class="pnav-sep"></div>
+  <button class="pnav-btn" id="pnav-docs-empty" onclick="goState('docs-empty')">Docs — Empty</button>
+  <button class="pnav-btn" id="pnav-docs-staging" onclick="goState('docs-staging')">Docs — Staging</button>
+  <button class="pnav-btn" id="pnav-docs-filled" onclick="goState('docs-filled')">Docs — Uploaded</button>
+  <div class="pnav-sep"></div>
+  <button class="pnav-btn" id="pnav-notes-empty" onclick="goState('notes-empty')">Notes — Empty</button>
+  <button class="pnav-btn" id="pnav-notes-filled" onclick="goState('notes-filled')">Notes — With notes</button>
+</div>
+
+<script>
+  let stagedFiles = [];
+  let notesOpen = false;
+  let currentDocState = 'empty';
+  let savedNotes = [];
+  let noteIdCounter = 0;
+
+  const MOCK_FILES = [
+    { name: 'Warranty_Certificate_2024.pdf', size: 1258291 },
+    { name: 'Purchase_Order_Dell_OptiPlex.docx', size: 348160 },
+    { name: 'Asset_Config_Sheet.xlsx', size: 2936012 },
+  ];
+  const MOCK_NOTES = [
+    { id: 1, text: 'Device is on legal hold due to HR review. Do not reassign, wipe, or modify until cleared by the legal team. Contact sarah@company.com for updates.', originalText: null, author: 'JK', authorColor: '#3a6ee8', authorName: 'James K.', addedAt: '27 Feb 2025, 10:14 AM', editedAt: null },
+    { id: 2, text: 'Battery replaced — new unit installed. Keyboard also cleaned and returned to user in working condition. All tests passed.', originalText: 'Battery replaced — new unit installed 22 Jan 2025.', author: 'SR', authorColor: '#2e9e6b', authorName: 'Sarah R.', addedAt: '22 Jan 2025, 3:40 PM', editedAt: '23 Jan 2025, 9:05 AM' },
+  ];
+
+  /* ── UTILS ── */
+  function getBadgeClass(n) { const e=n.split('.').pop().toUpperCase(); if(e==='PDF')return 'badge-pdf'; if(['XLS','XLSX'].includes(e))return 'badge-xls'; if(['JPG','JPEG','PNG'].includes(e))return 'badge-img'; if(e==='TXT')return 'badge-txt'; return 'badge-doc'; }
+  function getExt(n) { return n.split('.').pop().toUpperCase().slice(0,3); }
+  function fmtSize(b) { return b>1048576?(b/1048576).toFixed(1)+' MB':Math.round(b/1024)+' KB'; }
+
+  /* ── FILE HANDLING ── */
+  function triggerInput() { document.getElementById('fileInput').click(); }
+  function handleFileSelect(e) { Array.from(e.target.files).forEach(f=>stagedFiles.push(f)); e.target.value=''; showStaging(); }
+  function handleDrop(e) { e.preventDefault(); document.querySelectorAll('.dropzone,.dropzone-compact').forEach(d=>d.classList.remove('over')); Array.from(e.dataTransfer.files).forEach(f=>stagedFiles.push(f)); showStaging(); }
+  function handleDropFilled(e) { e.preventDefault(); Array.from(e.dataTransfer.files).forEach(f=>stagedFiles.push(f)); showStaging(); switchTab('docs'); }
+  function showStaging() {
+    if(!stagedFiles.length){showDocsEmpty();return;}
+    currentDocState='staging'; hideAllViews();
+    document.getElementById('view-docs-staging').style.display='block';
+    document.getElementById('tab-docs').classList.add('active');
+    renderStaged();
+  }
+  function renderStaged() {
+    const list=document.getElementById('staged-list'); list.innerHTML='';
+    let total=0;
+    stagedFiles.forEach((f,i)=>{
+      total+=f.size;
+      const r=document.createElement('div'); r.className='staged-row';
+      r.innerHTML=`<div class="s-badge ${getBadgeClass(f.name)}">${getExt(f.name)}</div><div class="s-info"><div class="s-name">${f.name}</div><div class="s-size">${fmtSize(f.size)}</div></div><button class="s-rm" onclick="removeStaged(${i})">✕</button>`;
+      list.appendChild(r);
+    });
+    document.getElementById('staged-count').textContent=stagedFiles.length+' file'+(stagedFiles.length>1?'s':'');
+    document.getElementById('staged-total').textContent='Total: '+fmtSize(total);
+  }
+  function removeStaged(i){stagedFiles.splice(i,1);stagedFiles.length?renderStaged():showDocsEmpty();}
+  function clearAll(){stagedFiles=[];showDocsEmpty();}
+  function uploadFiles(){
+    document.querySelectorAll('.staged-row').forEach(r=>r.classList.add('uploading'));
+    const btn=document.querySelector('.staged-upload-btn');btn.textContent='Uploading…';btn.disabled=true;
+    setTimeout(()=>{stagedFiles=[];currentDocState='filled';document.getElementById('docs-badge').style.display='inline-flex';hideAllViews();document.getElementById('view-docs-filled').style.display='block';document.getElementById('tab-docs').classList.add('active');setProtoNav('docs-filled');},1600);
+  }
+  function showDocsEmpty(){currentDocState='empty';hideAllViews();document.getElementById('view-docs-empty').style.display='block';document.getElementById('tab-docs').classList.add('active');document.getElementById('docs-badge').style.display='none';}
+
+  /* ── TAB SWITCHING ── */
+  function hideAllViews(){
+    ['general','hardware','software','licences','financials','history'].forEach(t=>{const v=document.getElementById('view-'+t);if(v)v.style.display='none';});
+    document.getElementById('view-docs-empty').style.display='none';
+    document.getElementById('view-docs-staging').style.display='none';
+    document.getElementById('view-docs-filled').style.display='none';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  }
+  function switchTab(name){
+    hideAllViews();document.getElementById('tab-'+name).classList.add('active');
+    if(name==='docs'){if(currentDocState==='filled')document.getElementById('view-docs-filled').style.display='block';else if(currentDocState==='staging'){document.getElementById('view-docs-staging').style.display='block';renderStaged();}else document.getElementById('view-docs-empty').style.display='block';}
+    else{const v=document.getElementById('view-'+name);if(v)v.style.display='block';}
+  }
+
+  /* ── NOTES ── */
+  function toggleNotes(){notesOpen=!notesOpen;document.getElementById('notesPanel').classList.toggle('open',notesOpen);document.getElementById('mainPage').classList.toggle('dimmed',notesOpen);}
+  function openNotes(){notesOpen=true;document.getElementById('notesPanel').classList.add('open');document.getElementById('mainPage').classList.add('dimmed');}
+  function closeNotes(){notesOpen=false;document.getElementById('notesPanel').classList.remove('open');document.getElementById('mainPage').classList.remove('dimmed');}
+
+  /* compose bar */
+  function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+  function toggleSendBtn(){const v=document.getElementById('composeTa').value.trim();document.getElementById('sendBtn').disabled=!v;}
+  function handleEnter(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!document.getElementById('sendBtn').disabled)saveNote();}}
+
+  function fmtNow(){
+    const d=new Date();
+    const day=d.getDate();
+    const mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const yr=d.getFullYear();
+    let h=d.getHours(); const m=String(d.getMinutes()).padStart(2,'0');
+    const ampm=h>=12?'PM':'AM'; h=h%12||12;
+    return `${day} ${mon} ${yr}, ${h}:${m} ${ampm}`;
+  }
+
+  function saveNote(){
+    const ta=document.getElementById('composeTa');
+    const text=ta.value.trim();if(!text)return;
+    noteIdCounter++;
+    savedNotes.unshift({id:noteIdCounter,text,originalText:null,author:'YO',authorColor:'#e87c3a',authorName:'You',addedAt:fmtNow(),editedAt:null});
+    ta.value='';ta.style.height='auto';document.getElementById('sendBtn').disabled=true;
+    renderNotes();
+    setTimeout(()=>{const s=document.getElementById('notesScroll');if(s)s.scrollTop=0;},50);
+  }
+
+  function renderNotes(){
+    const empty=savedNotes.length===0;
+    document.getElementById('notesEmptyState').style.display=empty?'flex':'none';
+    const scroll=document.getElementById('notesScroll');
+    scroll.style.display=empty?'none':'flex';
+    scroll.innerHTML='';
+    savedNotes.forEach((n,i)=>{
+      const card=document.createElement('div');
+      card.className='note-card'+(i===0?' note-new':'');
+      card.id='note-'+n.id;
+
+      const editedBadge=n.editedAt?`<span class="note-edited-badge" onclick="toggleOriginal(${n.id})" title="Click to see original">Edited</span>`:'';
+      const originalBlock=n.originalText?`
+        <div class="note-original-wrap" id="orig-${n.id}">
+          <div class="note-original-label">Original note</div>
+          <div class="note-original-text">${escHtml(n.originalText)}</div>
+        </div>`:'';
+      const editedTime=n.editedAt?`<div class="note-time-edited">Edited ${n.editedAt}</div>`:'';
+
+      card.innerHTML=`
+        <div class="note-card-bar" style="border-bottom: 2.5px solid ${n.authorColor}55; background:${n.authorColor}12"></div>
+        <div class="note-card-body">
+          <div class="note-header">
+            <div class="note-avatar" style="background:${n.authorColor}">${n.author}</div>
+            <div class="note-author">${n.authorName}</div>
+            ${editedBadge}
+          </div>
+          <div class="note-text">${escHtml(n.text)}</div>
+          ${originalBlock}
+
+          <!-- edit area — below text, text stays visible above -->
+          <div class="note-edit-area" id="edit-${n.id}">
+            <div class="edit-hint">Editing — original text shown above</div>
+            <textarea class="edit-ta" id="edit-ta-${n.id}" rows="3">${escHtml(n.text)}</textarea>
+            <div class="edit-footer-row">
+              <button class="edit-cancel" onclick="cancelEdit(${n.id})">Cancel</button>
+              <button class="edit-save" onclick="saveEdit(${n.id})">Save changes</button>
+            </div>
+          </div>
+
+          <!-- delete inline confirm — compact, not a full state -->
+          <div class="delete-inline" id="del-${n.id}">
+            <div class="del-inline-text">Delete this note?</div>
+            <div class="del-inline-btns">
+              <button class="del-no" onclick="cancelDelete(${n.id})">Cancel</button>
+              <button class="del-yes" onclick="confirmDelete(${n.id})">Delete</button>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div class="note-footer" id="footer-${n.id}">
+            <div class="note-timestamps">
+              <div class="note-time-added">Added ${n.addedAt}</div>
+              ${editedTime}
+            </div>
+            <div class="note-actions">
+              <button class="na-btn" onclick="startEdit(${n.id})">Edit</button>
+              <div class="na-sep"></div>
+              <button class="na-btn del" onclick="startDelete(${n.id})">Delete</button>
+            </div>
+          </div>
+        </div>
+      `;
+      scroll.appendChild(card);
+    });
+  }
+
+  function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+  /* toggle original text */
+  function toggleOriginal(id){
+    const el=document.getElementById('orig-'+id);
+    if(!el)return;
+    el.classList.toggle('show');
+  }
+
+  /* edit flow — text stays visible, textarea appears below */
+  function startEdit(id){
+    const card=document.getElementById('note-'+id);
+    // cancel any open delete
+    cancelDelete(id);
+    card.classList.add('editing');
+    const ta=document.getElementById('edit-ta-'+id);
+    ta.focus();ta.select();
+  }
+  function cancelEdit(id){
+    const card=document.getElementById('note-'+id);
+    card.classList.remove('editing');
+    const note=savedNotes.find(n=>n.id===id);
+    if(note)document.getElementById('edit-ta-'+id).value=note.text;
+    // restore footer
+    const footer=document.getElementById('footer-'+id);
+    if(footer)footer.style.display='';
+  }
+  function saveEdit(id){
+    const ta=document.getElementById('edit-ta-'+id);
+    const newText=ta.value.trim();
+    if(!newText)return;
+    const note=savedNotes.find(n=>n.id===id);
+    if(note){
+      if(!note.originalText)note.originalText=note.text; // save original only once
+      note.text=newText;
+      note.editedAt=fmtNow();
+    }
+    renderNotes();
+  }
+
+  /* delete flow — just a small inline confirm box */
+  function startDelete(id){
+    // cancel any open edit
+    cancelEdit(id);
+    const delEl=document.getElementById('del-'+id);
+    if(delEl)delEl.classList.add('show');
+    // hide footer to make space
+    const footer=document.getElementById('footer-'+id);
+    if(footer)footer.style.display='none';
+  }
+  function cancelDelete(id){
+    const delEl=document.getElementById('del-'+id);
+    if(delEl)delEl.classList.remove('show');
+    const footer=document.getElementById('footer-'+id);
+    if(footer)footer.style.display='';
+  }
+  function confirmDelete(id){
+    const card=document.getElementById('note-'+id);
+    card.style.opacity='0';card.style.transform='translateY(-4px)';card.style.transition='opacity 0.18s,transform 0.18s';
+    setTimeout(()=>{savedNotes=savedNotes.filter(n=>n.id!==id);renderNotes();},180);
+  }
+
+  /* ── PROTO NAV ── */
+  function goState(state){
+    closeNotes();setProtoNav(state);
+    if(state==='general'){switchTab('general');}
+    else if(state==='docs-empty'){currentDocState='empty';switchTab('docs');document.getElementById('docs-badge').style.display='none';}
+    else if(state==='docs-staging'){stagedFiles=MOCK_FILES.slice();currentDocState='staging';switchTab('docs');renderStaged();}
+    else if(state==='docs-filled'){currentDocState='filled';switchTab('docs');document.getElementById('docs-badge').style.display='inline-flex';}
+    else if(state==='notes-empty'){switchTab('general');savedNotes=[];noteIdCounter=0;renderNotes();openNotes();document.getElementById('composeTa').value='';document.getElementById('sendBtn').disabled=true;}
+    else if(state==='notes-filled'){switchTab('general');savedNotes=MOCK_NOTES.map(n=>({...n}));noteIdCounter=10;renderNotes();openNotes();}
+  }
+  function setProtoNav(id){document.querySelectorAll('.pnav-btn').forEach(b=>b.classList.remove('on'));const el=document.getElementById('pnav-'+id);if(el)el.classList.add('on');}
+</script>
+</body>
+</html>
